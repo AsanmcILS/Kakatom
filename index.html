@@ -386,7 +386,7 @@
         // ==========================================
         // ВАШ КЛЮЧ 2GIS - ВСТАВЬТЕ СЮДА (в кавычках!)
         // ==========================================
-        const API_KEY = 'deb9d466-c055-4288-9093-9209d8639795'; // ⚠️ ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ КЛЮЧ, но кавычки оставьте!
+        const API_KEY = 'deb9d466-c...'; // ⚠️ ВСТАВЬТЕ СЮДА ВАШ ПОЛНЫЙ КЛЮЧ (в кавычках)
         
         // Координаты Астаны
         const ASTANA_CENTER = [51.1282, 71.4305];
@@ -477,7 +477,7 @@
                     <strong>${errorMessage}</strong>
                     <div class="error-details">${errorDetails}</div>
                     <p style="margin-top: 15px; font-size: 14px;">
-                        🔑 Текущий ключ: ${API_KEY.substring(0, 10)}...<br>
+                        🔑 Текущий ключ: ${API_KEY.substring(0, 15)}...<br>
                         📝 Убедитесь, что ключ вставлен правильно (в кавычках!)
                     </p>
                 </div>
@@ -520,7 +520,7 @@
                     fields: 'items.point,items.address,items.rubrics',
                     type: 'branch',
                     page: currentPage,
-                    page_size: 1,
+                    page_size: 10, // ⚠️ ИСПРАВЛЕНО: теперь 10 вместо 25
                     sort: 'relevance',
                     locale: 'ru_RU'
                 };
@@ -548,7 +548,7 @@
                         allPlaces = [...allPlaces, ...newPlaces];
                         displayedPlaces = allPlaces;
                         
-                        hasMorePages = data.result.items.length === 25;
+                        hasMorePages = data.result.items.length === 10; // теперь проверяем на 10
                         currentPage++;
                         
                         updatePlacesDisplay();
