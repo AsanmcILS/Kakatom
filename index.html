@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astana Guide - Туристический сервис</title>
+    <!-- Leaflet CSS (для карты) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .search-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .search-box button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .search-box button:hover {
+            background: #5a67d8;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .filter-btn:hover {
+            background: #ddd;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 500px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .places-list {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 500px;
+            overflow-y: auto;
+        }
+
+        .places-list h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .place-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border-left: 4px solid #667eea;
+        }
+
+        .place-card:hover {
+            transform: translateX(5px);
+            background: #f0f0f0;
+        }
+
+        .place-card h3 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .place-card .category {
+            color: #667eea;
+            font-size: 12px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .place-card .address {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .place-card .rating {
+            color: #fbbf24;
+            font-size: 14px;
+        }
+
+        .events-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .events-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .event-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .event-card h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .event-card .date {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .event-card .location {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            color: #e53e3e;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .place-popup {
+            font-family: Arial, sans-serif;
+        }
+        
+        .place-popup h4 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+        
+        .place-popup p {
+            margin: 0;
+            font-size: 12px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .map-container {
+                height: 350px;
+            }
+            
+            .places-list {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ Astana Guide</h1>
+        <p>Ваш персональный гид пERFTYGUH</p>
+    </div>
+
+    <div class="container">
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Поиск достопримечательностей, ресторанов, событий...">
+                <button onclick="searchPlaces()">Найти</button>
+            </div>
+            <div class="filters">
+                <button class="filter-btn active" onclick="filterPlaces('all')">Все</button>
+                <button class="filter-btn" onclick="filterPlaces('attraction')">🏛️ Достопримечательности</button>
+                <button class="filter-btn" onclick="filterPlaces('restaurant')">🍽️ Рестораны</button>
+                <button class="filter-btn" onclick="filterPlaces('cafe')">☕ Кафе</button>
+                <button class="filter-btn" onclick="filterPlaces('hotel')">🏨 Отели</button>
+                <button class="filter-btn" onclick="filterPlaces('museum')">🏛️ Музеи</button>
+                <button class="filter-btn" onclick="filterPlaces('park')">🌳 Парки</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            <div class="places-list" id="placesList">
+                <h2>📍 Места рядом</h2>
+                <div id="placesContainer"></div>
+            </div>
+        </div>
+
+        <div class="events-section">
+            <h2>📅 Ближайшие события</h2>
+            <div class="events-grid" id="eventsContainer"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Данные о местах (достопримечательности Астаны)
+        const places = [
+            {
+                id: 1,
+                name: 'Байтерек',
+                category: 'attraction',
+                address: 'пр. Нуржол, 14',
+                coordinates: [51.1282, 71.4305],
+                rating: 4.8,
+                description: 'Главная достопримечательность Астаны, символ города'
+            },
+            {
+                id: 2,
+                name: 'Хан Шатыр',
+                category: 'attraction',
+                address: 'ул. Туран, 37',
+                coordinates: [51.1315, 71.4214],
+                rating: 4.7,
+                description: 'Крупнейший торгово-развлекательный центр в форме шатра'
+            },
+            {
+                id: 3,
+                name: 'Ресторан "Алан"',
+                category: 'restaurant',
+                address: 'ул. Достык, 5',
+                coordinates: [51.1258, 71.4256],
+                rating: 4.5,
+                description: 'Национальная казахская кухня, уютная атмосфера'
+            },
+            {
+                id: 4,
+                name: 'Кафе "Coffee Boom"',
+                category: 'cafe',
+                address: 'пр. Абая, 10',
+                coordinates: [51.1223, 71.4289],
+                rating: 4.3,
+                description: 'Уютное кафе с десертами и авторским кофе'
+            },
+            {
+                id: 5,
+                name: 'Отель "Rixos"',
+                category: 'hotel',
+                address: 'пр. Туран, 24',
+                coordinates: [51.1342, 71.4225],
+                rating: 4.9,
+                description: 'Пятизвездочный отель с видом на город'
+            },
+            {
+                id: 6,
+                name: 'Национальный музей',
+                category: 'museum',
+                address: 'пр. Тауелсиздик, 54',
+                coordinates: [51.1378, 71.4187],
+                rating: 4.6,
+                description: 'Главный музей страны с богатой экспозицией'
+            },
+            {
+                id: 7,
+                name: 'Парк влюбленных',
+                category: 'park',
+                address: 'ул. Керей-Жанибек, 15',
+                coordinates: [51.1265, 71.4321],
+                rating: 4.4,
+                description: 'Красивый парк для прогулок и отдыха'
+            },
+            {
+                id: 8,
+                name: 'Дворец Мира и Согласия',
+                category: 'attraction',
+                address: 'пр. Тауелсиздик, 57',
+                coordinates: [51.1402, 71.4153],
+                rating: 4.7,
+                description: 'Уникальное пирамидальное здание, концертный зал'
+            },
+            {
+                id: 9,
+                name: 'Ресторан "Qazaq Gourmet"',
+                category: 'restaurant',
+                address: 'ул. Кунаева, 12',
+                coordinates: [51.1298, 71.4278],
+                rating: 4.6,
+                description: 'Современная казахская кухня'
+            },
+            {
+                id: 10,
+                name: 'Центральный парк',
+                category: 'park',
+                address: 'ул. Бараева, 1',
+                coordinates: [51.1355, 71.4255],
+                rating: 4.5,
+                description: 'Большой парк с аттракционами и прудами'
+            }
+        ];
+
+        // Данные о событиях
+        const events = [
+            {
+                id: 1,
+                title: 'Фестиваль национальной кухни',
+                date: '20-22 февраля 2026',
+                location: 'Хан Шатыр',
+                description: 'Дегустация блюд разных народов Казахстана'
+            },
+            {
+                id: 2,
+                title: 'Концерт "Ночь в опере"',
+                date: '25 февраля 2026',
+                location: 'Театр оперы и балета',
+                description: 'Классическая музыка в исполнении симфонического оркестра'
+            },
+            {
+                id: 3,
+                title: 'Выставка современных художников',
+                date: '1-15 марта 2026',
+                location: 'Национальный музей',
+                description: 'Работы молодых художников Казахстана'
+            },
+            {
+                id: 4,
+                title: 'Экскурсия по Астане',
+                date: 'Каждую субботу',
+                location: 'Площадь у Байтерека',
+                description: 'Бесплатная пешая экскурсия с гидом'
+            },
+            {
+                id: 5,
+                title: 'Спектакль "Кочевники"',
+                date: '5 марта 2026',
+                location: 'Театр драмы',
+                description: 'Историческая драма о жизни кочевников'
+            }
+        ];
+
+        let map;
+        let markers = [];
+        let currentFilter = 'all';
+
+        // Инициализация карты при загрузке страницы
+        window.onload = function() {
+            initMap();
+            displayPlaces();
+            displayEvents();
+        };
+
+        // Функция создания карты
+        function initMap() {
+            // Создаем карту с центром в Астане
+            map = L.map('map').setView([51.1282, 71.4305], 12);
+
+            // Добавляем слой карты (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Добавляем все маркеры на карту
+            updateMarkers();
+        }
+
+        // Обновление маркеров на карте
+        function updateMarkers() {
+            // Удаляем старые маркеры
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            // Фильтруем места по текущей категории
+            const filteredPlaces = currentFilter === 'all' 
+                ? places 
+                : places.filter(place => place.category === currentFilter);
+
+            // Добавляем новые маркеры
+            filteredPlaces.forEach(place => {
+                // Создаем иконку в зависимости от категории
+                const icon = L.divIcon({
+                    className: 'custom-marker',
+                    html: getMarkerEmoji(place.category),
+                    iconSize: [30, 30],
+                    popupAnchor: [0, -15]
+                });
+
+                // Создаем маркер
+                const marker = L.marker(place.coordinates, { icon }).addTo(map);
+                
+                // Добавляем всплывающее окно
+                marker.bindPopup(`
+                    <div class="place-popup">
+                        <h4>${place.name}</h4>
+                        <p>${place.address}</p>
+                        <p>⭐ ${place.rating}</p>
+                        <p>${place.description}</p>
+                    </div>
+                `);
+
+                // Сохраняем маркер
+                markers.push(marker);
+            });
+        }
+
+        // Функция для получения эмодзи по категории
+        function getMarkerEmoji(category) {
+            const emojis = {
+                attraction: '🏛️',
+                restaurant: '🍽️',
+                cafe: '☕',
+                hotel: '🏨',
+                museum: '🏛️',
+                park: '🌳'
+            };
+            return `<div style="font-size: 24px;">${emojis[category] || '📍'}</div>`;
+        }
+
+        // Отображение списка мест
+        function displayPlaces() {
+            const container = document.getElementById('placesContainer');
+            
+            // Фильтруем места
+            const filteredPlaces = currentFilter === 'all' 
+                ? places 
+                : places.filter(place => place.category === currentFilter);
+
+            if (filteredPlaces.length === 0) {
+                container.innerHTML = '<div class="loading">Места не найдены</div>';
+                return;
+            }
+
+            // Создаем HTML для каждого места
+            container.innerHTML = filteredPlaces.map(place => `
+                <div class="place-card" onclick="focusOnPlace(${place.id})">
+                    <div class="category">${getCategoryName(place.category)}</div>
+                    <h3>${place.name}</h3>
+                    <div class="address">${place.address}</div>
+                    <div class="rating">⭐ ${place.rating}</div>
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">${place.description}</p>
+                </div>
+            `).join('');
+        }
+
+        // Отображение событий
+        function displayEvents() {
+            const container = document.getElementById('eventsContainer');
+            
+            container.innerHTML = events.map(event => `
+                <div class="event-card">
+                    <h3>${event.title}</h3>
+                    <div class="date">📅 ${event.date}</div>
+                    <div class="location">📍 ${event.location}</div>
+                    <p style="font-size: 12px; margin-top: 8px; opacity: 0.9;">${event.description}</p>
+                </div>
+            `).join('');
+        }
+
+        // Получение названия категории
+        function getCategoryName(category) {
+            const names = {
+                attraction: '🏛️ Достопримечательность',
+                restaurant: '🍽️ Ресторан',
+                cafe: '☕ Кафе',
+                hotel: '🏨 Отель',
+                museum: '🏛️ Музей',
+                park: '🌳 Парк'
+            };
+            return names[category] || category;
+        }
+
+        // Фокус на выбранном месте
+        function focusOnPlace(placeId) {
+            const place = places.find(p => p.id === placeId);
+            if (place) {
+                // Перемещаем карту к месту
+                map.setView(place.coordinates, 16);
+                
+                // Открываем попап
+                markers.forEach(marker => {
+                    const markerPosition = marker.getLatLng();
+                    if (markerPosition.lat === place.coordinates[0] && 
+                        markerPosition.lng === place.coordinates[1]) {
+                        marker.openPopup();
+                    }
+                });
+            }
+        }
+
+        // Поиск мест
+        function searchPlaces() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (!query) {
+                // Если поиск пустой, показываем все места
+                displayPlaces();
+                updateMarkers();
+                return;
+            }
+
+            // Фильтруем места по поисковому запросу
+            const searchResults = places.filter(place => 
+                place.name.toLowerCase().includes(query) || 
+                place.address.toLowerCase().includes(query) ||
+                place.description.toLowerCase().includes(query)
+            );
+
+            if (searchResults.length > 0) {
+                // Временно заменяем отображаемые места
+                const container = document.getElementById('placesContainer');
+                container.innerHTML = searchResults.map(place => `
+                    <div class="place-card" onclick="focusOnPlace(${place.id})">
+                        <div class="category">${getCategoryName(place.category)}</div>
+                        <h3>${place.name}</h3>
+                        <div class="address">${place.address}</div>
+                        <div class="rating">⭐ ${place.rating}</div>
+                        <p style="font-size: 12px; color: #666; margin-top: 5px;">${place.description}</p>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('placesContainer').innerHTML = 
+                    '<div class="loading">Ничего не найдено</div>';
+            }
+        }
+
+        // Фильтрация мест по категории
+        function filterPlaces(category) {
+            currentFilter = category;
+            
+            // Обновляем активный класс кнопок
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Обновляем список мест и маркеры
+            displayPlaces();
+            updateMarkers();
+        }
+    </script>
+</body>
+</html>
