@@ -290,15 +290,35 @@
     <script>
         // Конфигурация API 2GIS
         const API_KEY = 'rujany3791'; // Публичный ключ 2GIS для демо
-        const MAP_CONFIG = {
-            center: [71.4305, 51.1282], // Координаты Астаны
-            zoom: 12
-        };
+        function loadAlternativeMap() {
+        const script = document.createElement('script');
+        script.src = `https://maps.api.2gis.ru/1.0?key=${API_KEY}`;
+        script.onload = initAlternativeMap;
+        document.head.appendChild(script);
+    }
+    
 
         let map;
         let markers = [];
         let places = [];
         let currentFilter = 'all';
+
+        function initAlternativeMap() {
+        if (typeof DG !== 'undefined') {
+            DG.autoload(function() {
+                var map = DG.map('map', {
+                    center: [51.1282, 71.4305],
+                    zoom: 12
+                });
+                
+                // Добавляем маркеры
+                places.forEach(place => {
+                    DG.marker(place.coordinates).addTo(map)
+                        .bindPopup(`<b>${place.name}</b><br>${place.address}`);
+                });
+            });
+        }
+    }
 
         // Инициализация карты
         function initMap() {
