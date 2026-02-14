@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astana Guide - Туристический сервис</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .search-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .search-box button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .search-box button:hover {
+            background: #5a67d8;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .filter-btn:hover {
+            background: #ddd;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 500px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .places-list {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 500px;
+            overflow-y: auto;
+        }
+
+        .places-list h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .place-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border-left: 4px solid #667eea;
+        }
+
+        .place-card:hover {
+            transform: translateX(5px);
+            background: #f0f0f0;
+        }
+
+        .place-card h3 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .place-card .category {
+            color: #667eea;
+            font-size: 12px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .place-card .address {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .place-card .rating {
+            color: #fbbf24;
+            font-size: 14px;
+        }
+
+        .events-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .events-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .event-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .event-card h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .event-card .date {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .event-card .location {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            color: #e53e3e;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .map-container {
+                height: 350px;
+            }
+            
+            .places-list {
+                height: 350px;
+            }
+        }
+    </style>
+    <!-- 2GIS Map API -->
+    <link rel="stylesheet" href="https://mapgl.2gis.com/api/css/2.0/mapgl.css">
+    <script src="https://mapgl.2gis.com/api/js/2.0"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ Astana Guide</h1>
+        <p>Ваш персональный гид по Астане</p>
+    </div>
+
+    <div class="container">
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Поиск достопримечательностей, ресторанов, событий...">
+                <button onclick="searchPlaces()">Найти</button>
+            </div>
+            <div class="filters">
+                <button class="filter-btn active" onclick="filterPlaces('all')">Все</button>
+                <button class="filter-btn" onclick="filterPlaces('attraction')">🏛️ Достопримечательности</button>
+                <button class="filter-btn" onclick="filterPlaces('restaurant')">🍽️ Рестораны</button>
+                <button class="filter-btn" onclick="filterPlaces('cafe')">☕ Кафе</button>
+                <button class="filter-btn" onclick="filterPlaces('hotel')">🏨 Отели</button>
+                <button class="filter-btn" onclick="filterPlaces('museum')">🏛️ Музеи</button>
+                <button class="filter-btn" onclick="filterPlaces('park')">🌳 Парки</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            <div class="places-list" id="placesList">
+                <h2>📍 Места рядом</h2>
+                <div id="placesContainer"></div>
+            </div>
+        </div>
+
+        <div class="events-section">
+            <h2>📅 Ближайшие события</h2>
+            <div class="events-grid" id="eventsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Конфигурация API 2GIS
+        const API_KEY = 'rujany3791'; // Публичный ключ 2GIS для демо
+        const MAP_CONFIG = {
+            center: [71.4305, 51.1282], // Координаты Астаны
+            zoom: 12
+        };
+
+        let map;
+        let markers = [];
+        let places = [];
+        let currentFilter = 'all';
+
+        // Инициализация карты
+        function initMap() {
+            map = new mapgl.Map('map', {
+                center: MAP_CONFIG.center,
+                zoom: MAP_CONFIG.zoom,
+                key: API_KEY,
+                style: 'default'
+            });
+
+            // Добавляем маркер центра города
+            new mapgl.Marker(map, {
+                coordinates: MAP_CONFIG.center,
+                icon: 'https://docs.2gis.com/img/mapgl/icon.svg',
+                size: [30, 30]
+            });
+
+            // Загружаем места при инициализации
+            loadPlaces();
+            loadEvents();
+        }
+
+        // Загрузка мест через API 2GIS
+        async function loadPlaces() {
+            showLoading();
+            try {
+                // В демо-версии используем тестовые данные
+                // В реальном проекте здесь будет запрос к API 2GIS
+                places = [
+                    {
+                        id: 1,
+                        name: 'Байтерек',
+                        category: 'attraction',
+                        address: 'пр. Нуржол, 14',
+                        coordinates: [71.4305, 51.1282],
+                        rating: 4.8,
+                        description: 'Главная достопримечательность Астаны'
+                    },
+                    {
+                        id: 2,
+                        name: 'Хан Шатыр',
+                        category: 'attraction',
+                        address: 'ул. Туран, 37',
+                        coordinates: [71.4214, 51.1315],
+                        rating: 4.7,
+                        description: 'Крупнейший торгово-развлекательный центр'
+                    },
+                    {
+                        id: 3,
+                        name: 'Ресторан "Алан"',
+                        category: 'restaurant',
+                        address: 'ул. Достык, 5',
+                        coordinates: [71.4256, 51.1258],
+                        rating: 4.5,
+                        description: 'Национальная кухня'
+                    },
+                    {
+                        id: 4,
+                        name: 'Кафе "Coffee Boom"',
+                        category: 'cafe',
+                        address: 'пр. Абая, 10',
+                        coordinates: [71.4289, 51.1223],
+                        rating: 4.3,
+                        description: 'Уютное кафе с десертами'
+                    },
+                    {
+                        id: 5,
+                        name: 'Отель "Rixos"',
+                        category: 'hotel',
+                        address: 'пр. Туран, 24',
+                        coordinates: [71.4225, 51.1342],
+                        rating: 4.9,
+                        description: 'Пятизвездочный отель'
+                    },
+                    {
+                        id: 6,
+                        name: 'Национальный музей',
+                        category: 'museum',
+                        address: 'пр. Тауелсиздик, 54',
+                        coordinates: [71.4187, 51.1378],
+                        rating: 4.6,
+                        description: 'Главный музей страны'
+                    },
+                    {
+                        id: 7,
+                        name: 'Парк влюбленных',
+                        category: 'park',
+                        address: 'ул. Керей-Жанибек, 15',
+                        coordinates: [71.4321, 51.1265],
+                        rating: 4.4,
+                        description: 'Красивый парк для прогулок'
+                    }
+                ];
+                
+                updatePlacesDisplay();
+            } catch (error) {
+                showError('Ошибка загрузки мест');
+                console.error(error);
+            }
+        }
+
+        // Загрузка событий
+        async function loadEvents() {
+            try {
+                const events = [
+                    {
+                        id: 1,
+                        title: 'Фестиваль национальной кухни',
+                        date: '20-22 февраля 2026',
+                        location: 'Хан Шатыр',
+                        description: 'Дегустация блюд разных народов'
+                    },
+                    {
+                        id: 2,
+                        title: 'Концерт "Ночь в опере"',
+                        date: '25 февраля 2026',
+                        location: 'Театр оперы и балета',
+                        description: 'Классическая музыка'
+                    },
+                    {
+                        id: 3,
+                        title: 'Выставка современных художников',
+                        date: '1-15 марта 2026',
+                        location: 'Национальный музей',
+                        description: 'Работы молодых художников'
+                    },
+                    {
+                        id: 4,
+                        title: 'Экскурсия по Астане',
+                        date: 'Каждую субботу',
+                        location: 'Площадь у Байтерека',
+                        description: 'Бесплатная пешая экскурсия'
+                    }
+                ];
+
+                displayEvents(events);
+            } catch (error) {
+                console.error('Ошибка загрузки событий:', error);
+            }
+        }
+
+        function displayEvents(events) {
+            const container = document.getElementById('eventsContainer');
+            container.innerHTML = events.map(event => `
+                <div class="event-card">
+                    <h3>${event.title}</h3>
+                    <div class="date">📅 ${event.date}</div>
+                    <div class="location">📍 ${event.location}</div>
+                    <p style="font-size: 12px; margin-top: 8px; opacity: 0.9;">${event.description}</p>
+                </div>
+            `).join('');
+        }
+
+        function updatePlacesDisplay() {
+            displayPlaces();
+            updateMarkers();
+        }
+
+        function displayPlaces() {
+            const container = document.getElementById('placesContainer');
+            const filteredPlaces = currentFilter === 'all' 
+                ? places 
+                : places.filter(place => place.category === currentFilter);
+
+            if (filteredPlaces.length === 0) {
+                container.innerHTML = '<div class="loading">Места не найдены</div>';
+                return;
+            }
+
+            container.innerHTML = filteredPlaces.map(place => `
+                <div class="place-card" onclick="focusOnPlace(${place.id})">
+                    <div class="category">${getCategoryName(place.category)}</div>
+                    <h3>${place.name}</h3>
+                    <div class="address">${place.address}</div>
+                    <div class="rating">⭐ ${place.rating}</div>
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">${place.description}</p>
+                </div>
+            `).join('');
+        }
+
+        function updateMarkers() {
+            // Очищаем старые маркеры
+            markers.forEach(marker => marker.destroy());
+            markers = [];
+
+            const filteredPlaces = currentFilter === 'all' 
+                ? places 
+                : places.filter(place => place.category === currentFilter);
+
+            // Добавляем новые маркеры
+            filteredPlaces.forEach(place => {
+                const marker = new mapgl.Marker(map, {
+                    coordinates: place.coordinates,
+                    icon: getMarkerIcon(place.category),
+                    size: [30, 30]
+                });
+
+                // Добавляем попап при клике на маркер
+                marker.on('click', () => {
+                    showPlaceInfo(place);
+                });
+
+                markers.push(marker);
+            });
+        }
+
+        function getMarkerIcon(category) {
+            const icons = {
+                attraction: 'https://docs.2gis.com/img/mapgl/icon.svg',
+                restaurant: 'https://docs.2gis.com/img/mapgl/icon.svg',
+                cafe: 'https://docs.2gis.com/img/mapgl/icon.svg',
+                hotel: 'https://docs.2gis.com/img/mapgl/icon.svg',
+                museum: 'https://docs.2gis.com/img/mapgl/icon.svg',
+                park: 'https://docs.2gis.com/img/mapgl/icon.svg'
+            };
+            return icons[category] || icons.attraction;
+        }
+
+        function getCategoryName(category) {
+            const names = {
+                attraction: '🏛️ Достопримечательность',
+                restaurant: '🍽️ Ресторан',
+                cafe: '☕ Кафе',
+                hotel: '🏨 Отель',
+                museum: '🏛️ Музей',
+                park: '🌳 Парк'
+            };
+            return names[category] || category;
+        }
+
+        function focusOnPlace(placeId) {
+            const place = places.find(p => p.id === placeId);
+            if (place) {
+                map.setCenter(place.coordinates);
+                map.setZoom(16);
+                showPlaceInfo(place);
+            }
+        }
+
+        function showPlaceInfo(place) {
+            // В демо-версии просто показываем alert
+            // В реальном проекте здесь можно показывать красивое модальное окно
+            alert(`${place.name}\n${place.address}\nРейтинг: ${place.rating}\n${place.description}`);
+        }
+
+        function searchPlaces() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            if (!query) {
+                updatePlacesDisplay();
+                return;
+            }
+
+            const filtered = places.filter(place => 
+                place.name.toLowerCase().includes(query) || 
+                place.address.toLowerCase().includes(query) ||
+                place.description.toLowerCase().includes(query)
+            );
+
+            if (filtered.length > 0) {
+                places = filtered;
+                updatePlacesDisplay();
+            } else {
+                document.getElementById('placesContainer').innerHTML = 
+                    '<div class="loading">Ничего не найдено</div>';
+            }
+        }
+
+        function filterPlaces(category) {
+            currentFilter = category;
+            
+            // Обновляем активный класс кнопок
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            updatePlacesDisplay();
+        }
+
+        function showLoading() {
+            document.getElementById('placesContainer').innerHTML = 
+                '<div class="loading">Загрузка мест...</div>';
+        }
+
+        function showError(message) {
+            document.getElementById('placesContainer').innerHTML = 
+                `<div class="error">${message}</div>`;
+        }
+
+        // Инициализация при загрузке страницы
+        window.onload = function() {
+            if (typeof mapgl !== 'undefined') {
+                initMap();
+            } else {
+                console.error('2GIS API не загрузилась');
+                document.getElementById('map').innerHTML = 
+                    '<div class="error">Ошибка загрузки карты</div>';
+            }
+        };
+    </script>
+</body>
+</html>
