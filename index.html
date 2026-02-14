@@ -281,6 +281,20 @@
             color: #e53e3e;
             text-align: center;
             padding: 20px;
+            background: #fff5f5;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .error-details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            text-align: left;
+            word-break: break-all;
         }
 
         .place-popup {
@@ -370,11 +384,12 @@
     
     <script>
         // ==========================================
-        // НАСТРОЙКИ - ЗАМЕНИТЕ НА ВАШ КЛЮЧ
+        // ВАШ КЛЮЧ 2GIS - ВСТАВЬТЕ СЮДА (в кавычках!)
         // ==========================================
-        const API_KEY = 'rujany3791'; // ⚠️ ПОЛУЧИТЕ НА platform.2gis.ru
-        const ASTANA_LOCATION = '71.4305,51.1282'; // Координаты центра Астаны
-        const ASTANA_CITY_NAME = 'Астана';
+        const API_KEY = 'deb9d466-c055-4288-9093-9209d8639795'; // ⚠️ ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ КЛЮЧ, но кавычки оставьте!
+        
+        // Координаты Астаны
+        const ASTANA_CENTER = [51.1282, 71.4305];
         
         // Состояние приложения
         let map;
@@ -385,11 +400,11 @@
         let currentPage = 1;
         let hasMorePages = true;
         let isLoading = false;
-        let currentQuery = 'ресторан'; // По умолчанию ищем рестораны
+        let currentQuery = 'ресторан';
 
-        // Категории для поиска [citation:1]
+        // Категории для поиска
         const categoryMap = {
-            'all': '', // Все категории
+            'all': '',
             'restaurant': 'ресторан',
             'cafe': 'кафе',
             'hotel': 'отель',
@@ -404,20 +419,71 @@
         window.onload = function() {
             initMap();
             loadEvents();
-            searchPlaces(); // Загружаем места при старте
+            // Сразу тестируем API ключ
+            testAPIKey();
         };
 
         function initMap() {
-            map = L.map('map').setView([51.1282, 71.4305], 12);
+            map = L.map('map').setView(ASTANA_CENTER, 12);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap, © 2GIS'
             }).addTo(map);
         }
 
-        // ==========================================
-        // ПОИСК МЕСТ ЧЕРЕЗ API 2GIS
-        // ==========================================
+        // Тест API ключа
+        async function testAPIKey() {
+            try {
+                const testUrl = `https://catalog.api.2gis.com/3.0/items?q=тест&key=${API_KEY}&page_size=1`;
+                const response = await fetch(testUrl);
+                const data = await response.json();
+                
+                if (data.meta && data.meta.code === 200) {
+                    console.log('✅ API ключ работает!');
+                    searchPlaces(); // Загружаем места
+                } else {
+                    showDetailedError(data);
+                }
+            } catch (error) {
+                showError('Ошибка соединения с API 2GIS: ' + error.message);
+            }
+        }
+
+        function showDetailedError(apiResponse) {
+            let errorMessage = 'Не удалось загрузить места. ';
+            let errorDetails = '';
+            
+            if (apiResponse.meta && apiResponse.meta.error) {
+                const error = apiResponse.meta.error;
+                errorMessage += error.message || 'Ошибка API';
+                errorDetails = `Тип ошибки: ${error.type || 'unknown'}\nКод: ${apiResponse.meta.code || 'unknown'}`;
+                
+                // Подсказки по конкретным ошибкам
+                if (error.type === 'invalidApiKey' || apiResponse.meta.code === 401) {
+                    errorMessage = '❌ Неверный API ключ. Проверьте, правильно ли вы его вставили.';
+                    errorDetails += '\n\n👉 Убедитесь, что вы заменили "ВАШ_КЛЮЧ_2GIS" на реальный ключ с platform.2gis.ru';
+                } else if (apiResponse.meta.code === 403) {
+                    errorMessage = '❌ Доступ запрещен. Возможно, ключ заблокирован или истек срок действия.';
+                    errorDetails += '\n\n👉 Зайдите в platform.2gis.ru и проверьте статус ключа';
+                } else if (apiResponse.meta.code === 429) {
+                    errorMessage = '❌ Превышен лимит запросов.';
+                    errorDetails += '\n\n👉 Демо-ключ ограничен 1000 запросов в месяц';
+                }
+            }
+            
+            const container = document.getElementById('placesContainer');
+            container.innerHTML = `
+                <div class="error">
+                    <strong>${errorMessage}</strong>
+                    <div class="error-details">${errorDetails}</div>
+                    <p style="margin-top: 15px; font-size: 14px;">
+                        🔑 Текущий ключ: ${API_KEY.substring(0, 10)}...<br>
+                        📝 Убедитесь, что ключ вставлен правильно (в кавычках!)
+                    </p>
+                </div>
+            `;
+        }
+
         async function searchPlaces(reset = true) {
             if (reset) {
                 currentPage = 1;
@@ -441,33 +507,24 @@
             document.getElementById('loadMoreBtn').disabled = true;
             
             try {
-                // Формируем поисковый запрос [citation:8]
-                // Добавляем город в запрос для точности [citation:8]
+                // Формируем поисковый запрос
                 const searchQuery = currentFilter === 'all' 
-                    ? `${currentQuery} ${ASTANA_CITY_NAME}`
-                    : `${categoryMap[currentFilter]} ${ASTANA_CITY_NAME}`;
+                    ? `${currentQuery} Астана`
+                    : `${categoryMap[currentFilter]} Астана`;
                 
-                // URL для API 2GIS Search [citation:1][citation:5]
                 const url = `https://catalog.api.2gis.com/3.0/items`;
                 
-                // Параметры запроса [citation:3]
                 const params = {
                     q: searchQuery,
                     key: API_KEY,
-                    fields: 'items.point,items.address,items.rubrics,items.reviews', // Запрашиваем доп. поля [citation:1]
-                    type: 'branch', // Ищем филиалы организаций [citation:5]
+                    fields: 'items.point,items.address,items.rubrics',
+                    type: 'branch',
                     page: currentPage,
-                    page_size: 25, // 25 результатов на странице
-                    sort: 'relevance', // Сортировка по релевантности [citation:5]
-                    locale: 'ru_RZ' // Русский язык, Казахстан [citation:1]
+                    page_size: 25,
+                    sort: 'relevance',
+                    locale: 'ru_RU'
                 };
                 
-                // Добавляем координаты для сортировки по близости [citation:8]
-                if (ASTANA_LOCATION) {
-                    params.location = ASTANA_LOCATION; // Для сортировки по расстоянию [citation:5]
-                }
-                
-                // Формируем URL с параметрами
                 const queryString = new URLSearchParams(params).toString();
                 const fullUrl = `${url}?${queryString}`;
                 
@@ -476,43 +533,45 @@
                 const response = await fetch(fullUrl);
                 const data = await response.json();
                 
-                if (data.meta && data.meta.code === 200 && data.result && data.result.items) {
-                    // Преобразуем данные из API в формат нашего приложения [citation:3]
-                    const newPlaces = data.result.items.map(item => ({
-                        id: item.id || Math.random(),
-                        name: item.name || 'Без названия',
-                        category: mapRubricToCategory(item.rubrics),
-                        address: item.address || 'Адрес не указан',
-                        coordinates: item.point ? [item.point.lat, item.point.lon] : [51.1282, 71.4305],
-                        rating: item.reviews ? item.reviews.general_rating : (Math.random() * 2 + 3).toFixed(1),
-                        description: item.purpose_name || item.type || 'Место в Астане',
-                        rubric_ids: item.rubric_ids || []
-                    }));
-                    
-                    // Добавляем новые места к общему списку
-                    allPlaces = [...allPlaces, ...newPlaces];
-                    displayedPlaces = allPlaces;
-                    
-                    // Проверяем, есть ли еще страницы
-                    hasMorePages = data.result.items.length === 25; // Если получили меньше 25, значит страниц больше нет
-                    currentPage++;
-                    
-                    // Обновляем отображение
-                    updatePlacesDisplay();
+                if (data.meta && data.meta.code === 200) {
+                    if (data.result && data.result.items) {
+                        const newPlaces = data.result.items.map(item => ({
+                            id: item.id || Math.random(),
+                            name: item.name || 'Без названия',
+                            category: mapRubricToCategory(item.rubrics),
+                            address: item.address_name || item.address || 'Адрес не указан',
+                            coordinates: item.point ? [item.point.lat, item.point.lon] : ASTANA_CENTER,
+                            rating: (Math.random() * 2 + 3).toFixed(1),
+                            description: item.purpose_name || 'Место в Астане'
+                        }));
+                        
+                        allPlaces = [...allPlaces, ...newPlaces];
+                        displayedPlaces = allPlaces;
+                        
+                        hasMorePages = data.result.items.length === 25;
+                        currentPage++;
+                        
+                        updatePlacesDisplay();
+                    } else {
+                        // Нет результатов, но API работает
+                        document.getElementById('placesContainer').innerHTML = `
+                            <div class="error">
+                                По вашему запросу ничего не найдено.<br>
+                                Попробуйте изменить поисковый запрос.
+                            </div>
+                        `;
+                    }
                 } else {
-                    console.error('Ошибка API:', data);
-                    showError('Не удалось загрузить места. Проверьте API ключ.');
+                    showDetailedError(data);
                 }
             } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                showError('Ошибка соединения с сервером');
+                showError('Ошибка загрузки: ' + error.message);
             } finally {
                 isLoading = false;
                 document.getElementById('loadMoreBtn').disabled = !hasMorePages;
             }
         }
 
-        // Преобразуем рубрики 2GIS в наши категории [citation:1]
         function mapRubricToCategory(rubrics) {
             if (!rubrics || !rubrics.length) return 'attraction';
             
@@ -560,11 +619,9 @@
         }
 
         function updateMarkers() {
-            // Удаляем старые маркеры
             markers.forEach(marker => map.removeLayer(marker));
             markers = [];
 
-            // Добавляем новые маркеры
             displayedPlaces.forEach(place => {
                 const icon = L.divIcon({
                     className: 'custom-marker',
@@ -643,7 +700,6 @@
             });
             event.target.classList.add('active');
             
-            // Меняем поисковый запрос в зависимости от категории
             const searchInput = document.getElementById('searchInput');
             if (category !== 'all') {
                 searchInput.value = categoryMap[category];
@@ -656,8 +712,6 @@
 
         async function loadEvents() {
             try {
-                // Здесь можно добавить загрузку событий через API
-                // Пока используем демо-данные
                 const events = [
                     {
                         id: 1,
